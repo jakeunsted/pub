@@ -1,9 +1,11 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useThemePreference, type ThemePreference } from '@/hooks/useThemePreference';
 
 export default function ProfileSettingsScreen() {
+  const { t } = useTranslation();
   const { preference, setPreference } = useThemePreference();
 
   const handleThemeChange = (newPreference: ThemePreference) => {
@@ -12,15 +14,15 @@ export default function ProfileSettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Profile Settings</Text>
+      <Text style={styles.title}>{t('profileSettings.title')}</Text>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Theme</Text>
+        <Text style={styles.sectionTitle}>{t('profileSettings.theme')}</Text>
         <TouchableOpacity
           style={[styles.option, preference === 'light' && styles.optionSelected]}
           onPress={() => handleThemeChange('light')}
         >
           <Text style={[styles.optionText, preference === 'light' && styles.optionTextSelected]}>
-            Light
+            {t('profileSettings.light')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -28,7 +30,7 @@ export default function ProfileSettingsScreen() {
           onPress={() => handleThemeChange('dark')}
         >
           <Text style={[styles.optionText, preference === 'dark' && styles.optionTextSelected]}>
-            Dark
+            {t('profileSettings.dark')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -36,12 +38,12 @@ export default function ProfileSettingsScreen() {
           onPress={() => handleThemeChange('system')}
         >
           <Text style={[styles.optionText, preference === 'system' && styles.optionTextSelected]}>
-            System
+            {t('profileSettings.system')}
           </Text>
         </TouchableOpacity>
       </View>
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>Back</Text>
+        <Text style={styles.backButtonText}>{t('common.back')}</Text>
       </TouchableOpacity>
     </View>
   );

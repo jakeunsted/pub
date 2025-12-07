@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useAuth } from '@/lib/auth-context';
 
 export default function MeScreen() {
+  const { t } = useTranslation();
   const { signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -14,12 +16,12 @@ export default function MeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Me</Text>
+      <Text style={styles.title}>{t('me.me')}</Text>
       <TouchableOpacity style={styles.button} onPress={() => router.push('/profile-settings')}>
-        <Text style={styles.buttonText}>Profile Settings</Text>
+        <Text style={styles.buttonText}>{t('me.settings')}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.button, styles.signOutButton]} onPress={handleSignOut}>
-        <Text style={[styles.buttonText, styles.signOutButtonText]}>Sign Out</Text>
+        <Text style={[styles.buttonText, styles.signOutButtonText]}>{t('me.signOut')}</Text>
       </TouchableOpacity>
     </View>
   );

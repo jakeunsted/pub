@@ -1,4 +1,5 @@
 import { Alert, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/Themed';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -8,28 +9,29 @@ interface EmptyGroupsStateProps {
 }
 
 export function EmptyGroupsState({ onCreatePress }: EmptyGroupsStateProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>My Groups</Text>
-      <Text style={styles.emptyText}>You don't have any groups yet</Text>
+      <Text style={styles.title}>{t('groups.emptyState.title')}</Text>
+      <Text style={styles.emptyText}>{t('groups.emptyState.noGroups')}</Text>
       <Button
         style={styles.button}
         onPress={onCreatePress}
         size="lg"
         action="primary"
       >
-        <ButtonText>Create Group</ButtonText>
+        <ButtonText>{t('groups.createGroup')}</ButtonText>
       </Button>
       <Button
         style={styles.button}
         onPress={() => {
-          Alert.alert('Join Group', 'Join functionality coming soon!');
+          Alert.alert(t('groups.joinGroup'), t('groups.joinFunctionalityComingSoon'));
         }}
         size="lg"
         variant="outline"
         action="secondary"
       >
-        <ButtonText>Join Group</ButtonText>
+        <ButtonText>{t('groups.joinGroup')}</ButtonText>
       </Button>
     </View>
   );

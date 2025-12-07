@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Text, View } from '@/components/Themed';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -9,16 +10,17 @@ interface GroupsHeaderProps {
 }
 
 export function GroupsHeader({ onCreatePress, showCreateButton = true }: GroupsHeaderProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>My Groups</Text>
+      <Text style={styles.title}>{t('groups.title')}</Text>
       {showCreateButton && (
         <Button
           onPress={onCreatePress}
           size="sm"
           action="primary"
         >
-          <ButtonText>+ Create</ButtonText>
+          <ButtonText>{t('groups.create')}</ButtonText>
         </Button>
       )}
     </View>

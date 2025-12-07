@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from '@/lib/auth-context';
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
+import '@/lib/i18n';
 
 export {
   // Catch any errors thrown by the Layout component.

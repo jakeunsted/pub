@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button, ButtonText } from '@/components/ui/button';
 import {
@@ -16,11 +17,12 @@ interface CreateGroupFormProps {
 }
 
 export function CreateGroupForm({ onSubmit, onCancel, isSubmitting = false }: CreateGroupFormProps) {
+  const { t } = useTranslation();
   const [groupName, setGroupName] = useState('');
 
   const handleSubmit = async () => {
     if (!groupName.trim()) {
-      Alert.alert('Error', 'Please enter a group name');
+      Alert.alert(t('common.error'), t('groups.createForm.pleaseEnterGroupName'));
       return;
     }
     try {
@@ -38,11 +40,11 @@ export function CreateGroupForm({ onSubmit, onCancel, isSubmitting = false }: Cr
     <View style={styles.createForm}>
       <FormControl style={styles.formControl}>
         <FormControlLabel>
-          <FormControlLabelText>Group name</FormControlLabelText>
+          <FormControlLabelText>{t('groups.createForm.groupName')}</FormControlLabelText>
         </FormControlLabel>
         <Input>
           <InputField
-            placeholder="Enter group name"
+            placeholder={t('groups.createForm.enterGroupName')}
             value={groupName}
             onChangeText={setGroupName}
             autoFocus
@@ -58,7 +60,7 @@ export function CreateGroupForm({ onSubmit, onCancel, isSubmitting = false }: Cr
           size="lg"
           action="primary"
         >
-          <ButtonText>{isSubmitting ? 'Creating...' : 'Create'}</ButtonText>
+          <ButtonText>{isSubmitting ? t('groups.createForm.creating') : t('common.create')}</ButtonText>
         </Button>
         <Button
           style={styles.button}
@@ -70,7 +72,7 @@ export function CreateGroupForm({ onSubmit, onCancel, isSubmitting = false }: Cr
           variant="outline"
           action="secondary"
         >
-          <ButtonText>Cancel</ButtonText>
+          <ButtonText>{t('common.cancel')}</ButtonText>
         </Button>
       </View>
     </View>

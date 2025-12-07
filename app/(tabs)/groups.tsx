@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import {
   CreateGroupForm,
@@ -19,6 +20,7 @@ interface Group {
 }
 
 export default function MyGroupsScreen() {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,7 @@ export default function MyGroupsScreen() {
       setGroups((groupsData || []) as Group[]);
     } catch (error: any) {
       console.error('Failed to load groups:', error);
-      Alert.alert('Error', error.message || 'Failed to load groups');
+      Alert.alert(t('common.error'), error.message || t('groups.failedToLoad'));
       setGroups([]);
     } finally {
       setLoading(false);
@@ -85,7 +87,7 @@ export default function MyGroupsScreen() {
 
   const handleCreateGroup = async (name: string) => {
     if (!session?.user?.id) {
-      Alert.alert('Error', 'Not authenticated');
+      Alert.alert(t('common.error'), t('common.notAuthenticated'));
       throw new Error('Not authenticated');
     }
 
@@ -135,8 +137,8 @@ export default function MyGroupsScreen() {
       setShowCreateForm(false);
       await loadGroups();
     } catch (error: any) {
-      const errorMessage = error.message || 'Failed to create group';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.message || t('groups.failedToCreate');
+      Alert.alert(t('common.error'), errorMessage);
       // Re-throw so the form component knows there was an error
       throw error;
     } finally {
@@ -153,7 +155,7 @@ export default function MyGroupsScreen() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>Loading groups...</Text>
+        <Text style={styles.loadingText}>{t('groups.loading')}</Text>
       </View>
     );
   }

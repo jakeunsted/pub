@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button, ButtonText } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import { Input, InputField } from '@/components/ui/input';
 import { supabase } from '@/lib/superbase';
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,17 +22,17 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error'), t('common.pleaseFillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(t('common.error'), t('register.passwordsDoNotMatch'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(t('common.error'), t('register.passwordTooShort'));
       return;
     }
 
@@ -41,11 +43,11 @@ export default function RegisterScreen() {
     });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common.error'), error.message);
     } else {
-      Alert.alert('Success', 'Account created! Please check your email to verify your account.', [
+      Alert.alert(t('common.success'), t('register.accountCreated'), [
         {
-          text: 'OK',
+          text: t('common.ok'),
           onPress: () => router.replace('/(tabs)'),
         },
       ]);
@@ -59,15 +61,15 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
+      <Text style={styles.title}>{t('register.title')}</Text>
 
       <FormControl style={styles.formControl}>
         <FormControlLabel>
-          <FormControlLabelText>Email</FormControlLabelText>
+          <FormControlLabelText>{t('register.email')}</FormControlLabelText>
         </FormControlLabel>
         <Input>
           <InputField
-            placeholder="Email"
+            placeholder={t('register.email')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -79,11 +81,11 @@ export default function RegisterScreen() {
 
       <FormControl style={styles.formControl}>
         <FormControlLabel>
-          <FormControlLabelText>Password</FormControlLabelText>
+          <FormControlLabelText>{t('register.password')}</FormControlLabelText>
         </FormControlLabel>
         <Input>
           <InputField
-            placeholder="Password"
+            placeholder={t('register.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -95,11 +97,11 @@ export default function RegisterScreen() {
 
       <FormControl style={styles.formControl}>
         <FormControlLabel>
-          <FormControlLabelText>Confirm Password</FormControlLabelText>
+          <FormControlLabelText>{t('register.confirmPassword')}</FormControlLabelText>
         </FormControlLabel>
         <Input>
           <InputField
-            placeholder="Confirm Password"
+            placeholder={t('register.confirmPassword')}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
@@ -116,7 +118,7 @@ export default function RegisterScreen() {
         size="lg"
         action="primary"
       >
-        <ButtonText>{loading ? 'Creating account...' : 'Register'}</ButtonText>
+        <ButtonText>{loading ? t('register.creatingAccount') : t('register.register')}</ButtonText>
       </Button>
 
       <Button
@@ -125,7 +127,7 @@ export default function RegisterScreen() {
         onPress={navigateToLogin}
         style={styles.linkButton}
       >
-        <ButtonText>Already have an account? Login</ButtonText>
+        <ButtonText>{t('register.hasAccount')}</ButtonText>
       </Button>
     </View>
   );

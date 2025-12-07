@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button, ButtonText } from '@/components/ui/button';
 import {
@@ -14,13 +15,14 @@ import { Text } from 'react-native';
 import { supabase } from '@/lib/superbase';
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error'), t('common.pleaseFillAllFields'));
       return;
     }
 
@@ -31,7 +33,7 @@ export default function LoginScreen() {
     });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common.error'), error.message);
     } else {
       router.replace('/(tabs)');
     }
@@ -44,15 +46,15 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>{t('login.title')}</Text>
 
       <FormControl style={styles.formControl}>
         <FormControlLabel>
-          <FormControlLabelText>Email</FormControlLabelText>
+          <FormControlLabelText>{t('login.email')}</FormControlLabelText>
         </FormControlLabel>
         <Input>
           <InputField
-            placeholder="Email"
+            placeholder={t('login.email')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -64,11 +66,11 @@ export default function LoginScreen() {
 
       <FormControl style={styles.formControl}>
         <FormControlLabel>
-          <FormControlLabelText>Password</FormControlLabelText>
+          <FormControlLabelText>{t('login.password')}</FormControlLabelText>
         </FormControlLabel>
         <Input>
           <InputField
-            placeholder="Password"
+            placeholder={t('login.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -85,7 +87,7 @@ export default function LoginScreen() {
         size="lg"
         action="primary"
       >
-        <ButtonText>{loading ? 'Logging in...' : 'Login'}</ButtonText>
+        <ButtonText>{loading ? t('login.loggingIn') : t('login.login')}</ButtonText>
       </Button>
 
       <Button
@@ -94,7 +96,7 @@ export default function LoginScreen() {
         onPress={navigateToRegister}
         style={styles.linkButton}
       >
-        <ButtonText>Don't have an account? Register</ButtonText>
+        <ButtonText>{t('login.noAccount')}</ButtonText>
       </Button>
     </View>
   );

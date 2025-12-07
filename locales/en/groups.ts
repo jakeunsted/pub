@@ -7,6 +7,8 @@ export default {
   createGroup: 'Create Group',
   joinGroup: 'Join Group',
   joinFunctionalityComingSoon: 'Join functionality coming soon!',
+  members: 'Members',
+  noMembers: 'No members in this group',
   emptyState: {
     title: 'My Groups',
     noGroups: "You don't have any groups yet",

@@ -16,13 +16,19 @@ import { supabase } from '@/lib/superbase';
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email || !displayName || !password || !confirmPassword) {
       Alert.alert(t('common.error'), t('common.pleaseFillAllFields'));
+      return;
+    }
+
+    if (!displayName.trim()) {
+      Alert.alert(t('common.error'), t('register.displayNameRequired'));
       return;
     }
 
@@ -37,21 +43,40 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      Alert.alert(t('common.error'), error.message);
-    } else {
-      Alert.alert(t('common.success'), t('register.accountCreated'), [
-        {
-          text: t('common.ok'),
-          onPress: () => router.replace('/(tabs)'),
-        },
-      ]);
+    if (authError) {
+      Alert.alert(t('common.error'), authError.message);
+      setLoading(false);
+      return;
     }
+
+    if (authData.user) {
+      // Create profile with display name
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          display_name: displayName.trim(),
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        Alert.alert(t('common.error'), 'Failed to create profile. Please try again.');
+        setLoading(false);
+        return;
+      }
+    }
+
+    Alert.alert(t('common.success'), t('register.accountCreated'), [
+      {
+        text: t('common.ok'),
+        onPress: () => router.replace('/(tabs)'),
+      },
+    ]);
     setLoading(false);
   };
 
@@ -75,6 +100,21 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
+          />
+        </Input>
+      </FormControl>
+
+      <FormControl style={styles.formControl}>
+        <FormControlLabel>
+          <FormControlLabelText>{t('register.displayName')}</FormControlLabelText>
+        </FormControlLabel>
+        <Input>
+          <InputField
+            placeholder={t('register.displayName')}
+            value={displayName}
+            onChangeText={setDisplayName}
+            autoCapitalize="words"
+            autoComplete="name"
           />
         </Input>
       </FormControl>

@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -12,11 +13,17 @@ import { Text, View } from '@/components/Themed';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/superbase';
 
+interface GroupMember {
+  user_id: string;
+  display_name: string | null;
+}
+
 interface Group {
   id: string;
   name: string;
   created_at: string;
   created_by: string | null;
+  members?: GroupMember[];
 }
 
 export default function MyGroupsScreen() {
@@ -75,7 +82,51 @@ export default function MyGroupsScreen() {
       }
 
       console.log('Groups loaded:', groupsData?.length || 0);
-      setGroups((groupsData || []) as Group[]);
+
+      // Fetch members for each group
+      const groupsWithMembers = await Promise.all(
+        (groupsData || []).map(async (group) => {
+          const { data: memberData, error: memberError } = await supabase
+            .from('group_members')
+            .select('user_id')
+            .eq('group_id', group.id);
+
+          if (memberError) {
+            console.error('Error loading members for group:', group.id, memberError);
+            return { ...group, members: [] };
+          }
+
+          if (!memberData || memberData.length === 0) {
+            return { ...group, members: [] };
+          }
+
+          // Fetch profiles for all members
+          const userIds = memberData.map((m) => m.user_id);
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, display_name')
+            .in('id', userIds);
+
+          if (profilesError) {
+            console.error('Error loading profiles:', profilesError);
+            return { ...group, members: [] };
+          }
+
+          // Map user_ids to display names
+          const profileMap = new Map(
+            (profilesData || []).map((p) => [p.id, p.display_name])
+          );
+
+          const members: GroupMember[] = memberData.map((member) => ({
+            user_id: member.user_id,
+            display_name: profileMap.get(member.user_id) || null,
+          }));
+
+          return { ...group, members };
+        })
+      );
+
+      setGroups(groupsWithMembers as Group[]);
     } catch (error: any) {
       console.error('Failed to load groups:', error);
       Alert.alert(t('common.error'), error.message || t('groups.failedToLoad'));
@@ -147,8 +198,7 @@ export default function MyGroupsScreen() {
   };
 
   const handleGroupPress = (group: Group) => {
-    // TODO: Navigate to group details
-    console.log('Group pressed:', group);
+    router.push(`/group-details?groupId=${encodeURIComponent(group.id)}`);
   };
 
   if (loading) {

@@ -1,22 +1,76 @@
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 
+import { Avatar } from '@/components/ui/avatar';
 import { Text, View } from '@/components/Themed';
 import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/superbase';
+
+interface Profile {
+  id: string;
+  display_name: string | null;
+}
 
 export default function MeScreen() {
   const { t } = useTranslation();
-  const { signOut } = useAuth();
+  const { session, signOut } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadProfile();
+    }
+  }, [session]);
+
+  const loadProfile = async () => {
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+      } else {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
     router.replace('/login');
   };
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('me.me')}</Text>
+      <View style={styles.profileSection}>
+        <Avatar name={profile?.display_name || undefined} size="large" />
+        <Text style={styles.displayName}>
+          {profile?.display_name || session?.user?.email || t('me.me')}
+        </Text>
+      </View>
       <TouchableOpacity style={styles.button} onPress={() => router.push('/profile-settings')}>
         <Text style={styles.buttonText}>{t('me.settings')}</Text>
       </TouchableOpacity>
@@ -34,10 +88,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  profileSection: {
+    alignItems: 'center',
     marginBottom: 40,
+  },
+  displayName: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginTop: 16,
   },
   button: {
     width: '100%',

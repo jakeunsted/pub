@@ -1,13 +1,18 @@
 import { FlatList, StyleSheet } from 'react-native';
 
-import { View } from '@/components/Themed';
 import { GroupItem } from './GroupItem';
+
+interface GroupMember {
+  user_id: string;
+  display_name: string | null;
+}
 
 interface Group {
   id: string;
   name: string;
   created_at: string;
   created_by: string | null;
+  members?: GroupMember[];
 }
 
 interface GroupListProps {

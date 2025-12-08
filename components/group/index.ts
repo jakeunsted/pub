@@ -3,4 +3,5 @@ export { EmptyGroupsState } from './EmptyGroupsState';
 export { GroupItem } from './GroupItem';
 export { GroupList } from './GroupList';
 export { GroupsHeader } from './GroupsHeader';
+export { InviteForm } from './InviteForm';
 

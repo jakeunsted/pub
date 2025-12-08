@@ -1,6 +1,7 @@
 import { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+import { acceptInvite, getAndClearPendingInviteToken } from './invites';
 import { supabase } from './superbase';
 
 interface AuthContextType {
@@ -25,9 +26,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setLoading(false);
+
+      // Check for pending invite when user logs in
+      if (session?.user?.id) {
+        const pendingToken = await getAndClearPendingInviteToken();
+        if (pendingToken) {
+          // Silently accept the invite in the background
+          acceptInvite(pendingToken, session.user.id).catch((error) => {
+            console.error('Error accepting pending invite:', error);
+          });
+        }
+      }
     });
 
     return () => subscription.unsubscribe();

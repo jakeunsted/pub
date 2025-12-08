@@ -12,6 +12,7 @@ import {
 import { Input, InputField } from '@/components/ui/input';
 import { Text } from 'react-native';
 
+import { acceptInvite, getAndClearPendingInviteToken } from '@/lib/invites';
 import { supabase } from '@/lib/superbase';
 
 export default function LoginScreen() {
@@ -27,16 +28,39 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
       Alert.alert(t('common.error'), error.message);
-    } else {
-      router.replace('/(tabs)');
+      setLoading(false);
+      return;
     }
+
+    // Check for pending invite and accept it
+    if (data.user) {
+      const pendingToken = await getAndClearPendingInviteToken();
+      if (pendingToken) {
+        const { success, error: inviteError } = await acceptInvite(pendingToken, data.user.id);
+        if (success) {
+          Alert.alert(t('common.success'), t('groups.invite.joinedGroup'), [
+            {
+              text: t('common.ok'),
+              onPress: () => router.replace('/(tabs)'),
+            },
+          ]);
+          setLoading(false);
+          return;
+        } else {
+          console.error('Error accepting invite:', inviteError);
+          // Continue with normal login flow even if invite fails
+        }
+      }
+    }
+
+    router.replace('/(tabs)');
     setLoading(false);
   };
 

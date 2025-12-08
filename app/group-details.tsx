@@ -1,17 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, StyleSheet } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 
+import { InviteSection, MemberList, type GroupMember } from '@/components/group-detail';
 import { Text, View } from '@/components/Themed';
-import { Avatar } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth-context';
+import { getGroupInvites, type InviteData } from '@/lib/invites';
 import { supabase } from '@/lib/superbase';
-
-interface GroupMember {
-  user_id: string;
-  display_name: string | null;
-}
 
 export default function GroupDetailsScreen() {
   const { t } = useTranslation();
@@ -20,10 +16,12 @@ export default function GroupDetailsScreen() {
   const { session } = useAuth();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingInvites, setPendingInvites] = useState<InviteData[]>([]);
 
   useEffect(() => {
     if (groupId) {
       loadMembers();
+      loadInvites();
     }
   }, [groupId]);
 
@@ -85,14 +83,22 @@ export default function GroupDetailsScreen() {
     }
   };
 
-  const renderMember = ({ item }: { item: GroupMember }) => (
-    <View style={styles.memberItem} lightColor="rgba(0, 0, 0, 0.02)" darkColor="rgba(255, 255, 255, 0.05)">
-      <Avatar name={item.display_name || undefined} size="medium" />
-      <Text style={styles.memberName}>
-        {item.display_name || 'Unknown User'}
-      </Text>
-    </View>
-  );
+  const loadInvites = async () => {
+    if (!groupId) {
+      return;
+    }
+
+    try {
+      const { invites, error } = await getGroupInvites(groupId);
+      if (error) {
+        console.error('Error loading invites:', error);
+        return;
+      }
+      setPendingInvites(invites);
+    } catch (error) {
+      console.error('Failed to load invites:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -103,74 +109,32 @@ export default function GroupDetailsScreen() {
     );
   }
 
+  const isMember = session?.user?.id && members.some((m) => m.user_id === session.user.id);
+
   return (
-    <View style={styles.container}>
-      {members.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>{t('groups.noMembers')}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={members}
-          renderItem={renderMember}
-          keyExtractor={(item) => item.user_id}
-          contentContainerStyle={styles.list}
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <MemberList members={members} />
+      {isMember && session?.user?.id && (
+        <InviteSection
+          groupId={groupId!}
+          inviterId={session.user.id}
+          pendingInvites={pendingInvites}
+          onInvitesChanged={loadInvites}
         />
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 20,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  backButton: {
-    marginBottom: 10,
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 20,
   },
   loadingText: {
     marginTop: 10,
-    opacity: 0.6,
-  },
-  list: {
-    paddingBottom: 20,
-  },
-  memberItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 15,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
     opacity: 0.6,
   },
 });

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/form-control';
 import { Input, InputField } from '@/components/ui/input';
 
+import { acceptInvite, getAndClearPendingInviteToken } from '@/lib/invites';
 import { supabase } from '@/lib/superbase';
 
 export default function RegisterScreen() {
@@ -68,6 +69,25 @@ export default function RegisterScreen() {
         Alert.alert(t('common.error'), 'Failed to create profile. Please try again.');
         setLoading(false);
         return;
+      }
+
+      // Check for pending invite and accept it
+      const pendingToken = await getAndClearPendingInviteToken();
+      if (pendingToken) {
+        const { success, error: inviteError } = await acceptInvite(pendingToken, authData.user.id);
+        if (success) {
+          Alert.alert(t('common.success'), t('groups.invite.joinedGroup'), [
+            {
+              text: t('common.ok'),
+              onPress: () => router.replace('/(tabs)'),
+            },
+          ]);
+          setLoading(false);
+          return;
+        } else {
+          console.error('Error accepting invite:', inviteError);
+          // Continue with normal registration success flow even if invite fails
+        }
       }
     }
 

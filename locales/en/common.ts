@@ -4,6 +4,7 @@ export default {
   ok: 'OK',
   back: 'Back',
   cancel: 'Cancel',
+  confirm: 'Confirm',
   create: 'Create',
   loading: 'Loading...',
   pleaseFillAllFields: 'Please fill in all fields',

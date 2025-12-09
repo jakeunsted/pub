@@ -1,14 +1,16 @@
 import { StyleSheet } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import PubQuestionButton from '@/components/pub/PubQuestionButton';
+import { View } from '@/components/Themed';
 
 export default function PubScreen() {
+  const handleQuestionSent = (groupId: string, groupName: string) => {
+    console.log(`Pub question sent to group ${groupName} (${groupId})`);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pub?</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <PubQuestionButton onQuestionSent={handleQuestionSent} />
     </View>
   );
 }

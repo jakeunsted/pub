@@ -31,6 +31,7 @@ export default {
     failedToSend: 'Failed to send invite',
     pendingInvites: 'Pending Invites',
     noPendingInvites: 'No pending invites',
+    cancelInvite: 'Cancel Invite',
     confirmCancel: 'Are you sure you want to cancel this invite?',
     inviteExpired: 'Expired',
     expiresIn: 'Expires in',

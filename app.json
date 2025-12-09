@@ -34,7 +34,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a65a473f-f7d8-4db4-b221-baeef6fecc55"
+      }
+    },
+    "owner": "jakeunsted"
   }
 }
-

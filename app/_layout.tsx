@@ -40,7 +40,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        // Ignore errors if splash screen is already hidden
+      });
     }
   }, [loaded]);
 
@@ -80,6 +82,7 @@ function RootLayoutNav() {
     <GluestackUIProvider mode={gluestackMode}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
           <Stack.Screen name="invite-accept" options={{ headerShown: false }} />

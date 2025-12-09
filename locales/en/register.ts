@@ -10,6 +10,8 @@ export default {
   passwordsDoNotMatch: 'Passwords do not match',
   passwordTooShort: 'Password must be at least 6 characters',
   displayNameRequired: 'Display name is required',
-  accountCreated: 'Account created! Please check your email to verify your account.',
+  accountCreated: 'Account created successfully!',
+  checkEmail: 'Check Your Email',
+  verifyEmailMessage: 'We\'ve sent you a confirmation email. Please check your inbox and click the verification link to activate your account. Once verified, you can log in.',
 };
 

@@ -115,6 +115,24 @@ export async function createInvite(
 }
 
 /**
+ * Gets the base web URL for invite links
+ */
+function getInviteBaseUrl(): string {
+  // Use environment variable if set, otherwise construct from current context
+  if (process.env.EXPO_PUBLIC_APP_URL) {
+    return process.env.EXPO_PUBLIC_APP_URL;
+  }
+
+  // If on web, use current origin
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  // Fallback for native or server-side (should be set via env var in production)
+  return 'https://your-app-domain.com'; // TODO: Replace with actual production domain
+}
+
+/**
  * Sends an invite email using Supabase
  */
 async function sendInviteEmail(
@@ -124,10 +142,9 @@ async function sendInviteEmail(
   inviterName: string
 ): Promise<void> {
   try {
-    // Construct the invite URL using the app's URL scheme
-    // The app scheme is "pub" as defined in app.json
-    const inviteUrl = `pub://invite/${token}`;
-    // For web/development, you might want to use: `${process.env.EXPO_PUBLIC_APP_URL || 'http://localhost:8081'}/invite/${token}`
+    // Construct the web invite URL that will handle device detection and redirects
+    const baseUrl = getInviteBaseUrl();
+    const inviteUrl = `${baseUrl}/invite/${token}`;
 
     // Use Supabase's email functionality
     // Note: This requires Supabase Edge Function or email template configuration
@@ -202,7 +219,7 @@ export async function acceptInvite(token: string, userId: string): Promise<{ suc
       .select('id')
       .eq('group_id', invite.group_id)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (existingMember) {
       // User is already a member, mark invite as accepted anyway
@@ -345,8 +362,9 @@ export async function resendInviteEmail(invite: InviteData): Promise<{ success: 
       .eq('id', invite.invited_by)
       .single();
 
-    // Construct the invite URL
-    const inviteUrl = `pub://invite/${invite.token}`;
+    // Construct the web invite URL
+    const baseUrl = getInviteBaseUrl();
+    const inviteUrl = `${baseUrl}/invite/${invite.token}`;
 
     // Send invite email
     await sendInviteEmail(

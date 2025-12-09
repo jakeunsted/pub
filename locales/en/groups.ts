@@ -9,6 +9,9 @@ export default {
   joinFunctionalityComingSoon: 'Join functionality coming soon!',
   members: 'Members',
   noMembers: 'No members in this group',
+  activePubSessions: 'Active Pub Sessions',
+  agreed: 'Agreed',
+  noAgreementsYet: 'No agreements yet',
   emptyState: {
     title: 'My Groups',
     noGroups: "You don't have any groups yet",

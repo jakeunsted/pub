@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 
-import { InviteSection, MemberList, type GroupMember } from '@/components/group-detail';
+import { InviteSection, MemberList, PubSessionsList, type GroupMember } from '@/components/group-detail';
 import { Text, View } from '@/components/Themed';
 import { useAuth } from '@/lib/auth-context';
 import { getGroupInvites, type InviteData } from '@/lib/invites';
@@ -114,6 +114,7 @@ export default function GroupDetailsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <MemberList members={members} />
+      {groupId && <PubSessionsList groupId={groupId} />}
       {isMember && session?.user?.id && (
         <InviteSection
           groupId={groupId!}

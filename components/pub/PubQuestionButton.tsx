@@ -141,61 +141,49 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
     setStatus('cheer');
 
     try {
-      // Get all members of the group (excluding the current user)
-      const { data: memberData, error: memberError } = await supabase
-        .from('group_members')
-        .select('user_id')
+      // Check if there's already an active request for this group
+      const now = new Date().toISOString();
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('pub_requests')
+        .select('id')
         .eq('group_id', group.id)
-        .neq('user_id', session.user.id);
+        .gt('expires_at', now);
 
-      if (memberError) {
-        throw new Error('Failed to load group members');
+      if (checkError) {
+        throw new Error(checkError.message || 'Failed to check existing requests');
       }
 
-      if (!memberData || memberData.length === 0) {
-        Alert.alert(t('common.info'), 'No other members in this group to notify.');
+      if (existingRequests && existingRequests.length > 0) {
+        Alert.alert(
+          t('pub.requestAlreadyExists'),
+          t('pub.groupHasActiveRequest')
+        );
         setStatus('idle');
         return;
       }
 
-      // Get current user's display name
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', session.user.id)
+      // Calculate expiration time (12 hours from now)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 12);
+
+      // Create pub_request record
+      const { data: pubRequest, error: requestError } = await supabase
+        .from('pub_requests')
+        .insert({
+          group_id: group.id,
+          requested_by: session.user.id,
+          expires_at: expiresAt.toISOString(),
+        })
+        .select()
         .single();
 
-      const senderName = profileData?.display_name || 'Someone';
+      if (requestError) {
+        throw new Error(requestError.message || 'Failed to create pub request');
+      }
 
-      // Create pub question notifications for each member
-      // For now, we'll create a simple notification record
-      // You may want to create a pub_questions table in the future
-      const notifications = memberData.map((member) => ({
-        user_id: member.user_id,
-        group_id: group.id,
-        sender_id: session.user.id,
-        sender_name: senderName,
-        group_name: group.name,
-        type: 'pub_question',
-        created_at: new Date().toISOString(),
-      }));
-
-      // TODO: Create notifications table and insert records
-      console.log('Sending pub question to group:', group.name, 'Members:', notifications);
-
-      // Simulate success after a short delay
-      setTimeout(() => {
-        onQuestionSent?.(group.id, group.name);
-        Alert.alert(
-          t('common.success'),
-          `Pub question sent to ${group.name}!`
-        );
-
-        // Reset to idle after showing success
-        setTimeout(() => {
-          setStatus('idle');
-        }, 2000);
-      }, 1000);
+      // Request created successfully, animation will complete naturally
+      onQuestionSent?.(group.id, group.name);
+      setStatus('idle');
     } catch (error: any) {
       console.error('Failed to send pub question:', error);
       Alert.alert(t('common.error'), error.message || 'Failed to send pub question');

@@ -3,14 +3,17 @@ import { Tabs } from 'expo-router';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { Platform } from 'react-native';
 
+import { usePendingRequestCount } from '@/hooks/usePendingRequestCount';
+
 export default function TabLayout() {
   const isIOS = Platform.OS === 'ios';
   const isWeb = Platform.OS === 'web';
+  const pendingCount = usePendingRequestCount();
 
   if (isIOS) {
     return (
       <NativeTabs>
-        <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger name="index" badge={pendingCount > 0 ? pendingCount : undefined}>
           <Icon sf="mug.fill" />
           <Label>Pub?</Label>
         </NativeTabs.Trigger>
@@ -49,6 +52,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="beer" size={size} color={color} />
           ),
+          tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
         }}
       />
       <Tabs.Screen

@@ -1,50 +1,113 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Modal, Pressable, View as RNView, StyleSheet } from 'react-native';
 
-import { useThemePreference, type ThemePreference } from '@/hooks/useThemePreference';
+import { Text, View, useThemeColor } from '@/components/Themed';
+import { Button, ButtonText } from '@/components/ui/button';
+import { FormControl, FormControlLabel, FormControlLabelText } from '@/components/ui/form-control';
+import { useThemePreference, type ThemePreference } from '@/lib/theme-context';
 
 export default function ProfileSettingsScreen() {
   const { t } = useTranslation();
   const { preference, setPreference } = useThemePreference();
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const textColor = useThemeColor({}, 'text');
+  const backgroundColor = useThemeColor(
+    { light: '#fff', dark: '#121212' },
+    'background'
+  );
+  const borderColor = useThemeColor(
+    { light: 'rgba(0, 0, 0, 0.1)', dark: 'rgba(255, 255, 255, 0.1)' },
+    'tabIconDefault'
+  );
 
   const handleThemeChange = (newPreference: ThemePreference) => {
     setPreference(newPreference);
+    setShowThemeDropdown(false);
+  };
+
+  const getThemeLabel = () => {
+    switch (preference) {
+      case 'light':
+        return t('profileSettings.light');
+      case 'dark':
+        return t('profileSettings.dark');
+      case 'system':
+        return t('profileSettings.system');
+      default:
+        return t('profileSettings.system');
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{t('profileSettings.title')}</Text>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profileSettings.theme')}</Text>
-        <TouchableOpacity
-          style={[styles.option, preference === 'light' && styles.optionSelected]}
-          onPress={() => handleThemeChange('light')}
-        >
-          <Text style={[styles.optionText, preference === 'light' && styles.optionTextSelected]}>
-            {t('profileSettings.light')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.option, preference === 'dark' && styles.optionSelected]}
-          onPress={() => handleThemeChange('dark')}
-        >
-          <Text style={[styles.optionText, preference === 'dark' && styles.optionTextSelected]}>
-            {t('profileSettings.dark')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.option, preference === 'system' && styles.optionSelected]}
-          onPress={() => handleThemeChange('system')}
-        >
-          <Text style={[styles.optionText, preference === 'system' && styles.optionTextSelected]}>
-            {t('profileSettings.system')}
-          </Text>
-        </TouchableOpacity>
+        <FormControl>
+          <FormControlLabel>
+            <FormControlLabelText>{t('profileSettings.theme')}</FormControlLabelText>
+          </FormControlLabel>
+          <Button
+            variant="outline"
+            size="lg"
+            onPress={() => setShowThemeDropdown(true)}
+            style={styles.dropdownButton}
+          >
+            <ButtonText style={styles.dropdownButtonText}>{getThemeLabel()}</ButtonText>
+            <FontAwesome name="chevron-down" size={14} color={textColor} style={styles.chevron} />
+          </Button>
+        </FormControl>
       </View>
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>{t('common.back')}</Text>
-      </TouchableOpacity>
+      <Button
+        variant="outline"
+        size="lg"
+        action="secondary"
+        onPress={() => router.back()}
+        style={styles.backButton}
+      >
+        <ButtonText>{t('common.back')}</ButtonText>
+      </Button>
+
+      <Modal
+        visible={showThemeDropdown}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowThemeDropdown(false)}
+      >
+        <RNView style={styles.modalOverlay}>
+          <Pressable style={styles.modalOverlayPressable} onPress={() => setShowThemeDropdown(false)} />
+          <View style={[styles.modalContent, { backgroundColor, borderColor }]}>
+            <Text style={[styles.modalTitle, { color: textColor }]}>
+              {t('profileSettings.selectTheme')}
+            </Text>
+            <RNView style={styles.optionsList}>
+              {(['light', 'dark', 'system'] as ThemePreference[]).map((option) => (
+                <Button
+                  key={option}
+                  variant={preference === option ? 'solid' : 'outline'}
+                  action={preference === option ? 'primary' : 'secondary'}
+                  size="lg"
+                  onPress={() => handleThemeChange(option)}
+                  style={styles.optionButton}
+                >
+                  <ButtonText>{t(`profileSettings.${option}`)}</ButtonText>
+                </Button>
+              ))}
+            </RNView>
+            <Button
+              variant="outline"
+              size="md"
+              action="secondary"
+              onPress={() => setShowThemeDropdown(false)}
+              style={styles.cancelButton}
+            >
+              <ButtonText>{t('common.cancel')}</ButtonText>
+            </Button>
+          </View>
+        </RNView>
+      </Modal>
     </View>
   );
 }
@@ -62,40 +125,50 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 30,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 15,
+  dropdownButton: {
+    width: '100%',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  option: {
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 10,
+  dropdownButtonText: {
+    flex: 1,
   },
-  optionSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  optionTextSelected: {
-    color: '#fff',
-    fontWeight: '600',
+  chevron: {
+    marginLeft: 8,
   },
   backButton: {
     marginTop: 20,
-    padding: 15,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    alignItems: 'center',
+    width: '100%',
   },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalOverlayPressable: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    borderTopWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  optionsList: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  optionButton: {
+    width: '100%',
+  },
+  cancelButton: {
+    width: '100%',
   },
 });
 

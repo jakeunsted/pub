@@ -7,8 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { useThemePreference } from '@/hooks/useThemePreference';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { ThemeProvider as AppThemeProvider, useThemePreference } from '@/lib/theme-context';
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
@@ -51,15 +51,17 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <AppThemeProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </AppThemeProvider>
   );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { preference } = useThemePreference();
+  const { preference, effectiveTheme } = useThemePreference();
   const { session, loading } = useAuth();
   const segments = useSegments();
 
@@ -76,11 +78,14 @@ function RootLayoutNav() {
     }
   }, [session, loading, segments]);
 
-  const gluestackMode = preference === 'system' ? (colorScheme === 'dark' ? 'dark' : 'light') : preference;
+  // Use effectiveTheme which updates when preference changes
+  const gluestackMode = effectiveTheme;
+  // Also use effectiveTheme for React Navigation theme
+  const navigationTheme = effectiveTheme === 'dark' ? DarkTheme : DefaultTheme;
 
   return (
-    <GluestackUIProvider mode={gluestackMode}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <GluestackUIProvider key={gluestackMode} mode={gluestackMode}>
+      <ThemeProvider value={navigationTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />

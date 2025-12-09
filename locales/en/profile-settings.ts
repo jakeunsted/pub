@@ -4,5 +4,6 @@ export default {
   light: 'Light',
   dark: 'Dark',
   system: 'System',
+  selectTheme: 'Select Theme',
 };
 

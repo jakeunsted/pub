@@ -39,6 +39,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      group_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          group_id: string
+          id: string
+          invited_by: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          group_id: string
+          id?: string
+          invited_by: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          group_id?: string
+          id?: string
+          invited_by?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invites_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invites_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string
@@ -171,70 +229,16 @@ export type Database = {
           },
         ]
       }
-      group_invites: {
-        Row: {
-          id: string
-          group_id: string
-          invited_by: string
-          email: string
-          token: string
-          created_at: string
-          expires_at: string
-          accepted_at: string | null
-          accepted_by: string | null
-        }
-        Insert: {
-          id?: string
-          group_id: string
-          invited_by: string
-          email: string
-          token: string
-          created_at?: string
-          expires_at: string
-          accepted_at?: string | null
-          accepted_by?: string | null
-        }
-        Update: {
-          id?: string
-          group_id?: string
-          invited_by?: string
-          email?: string
-          token?: string
-          created_at?: string
-          expires_at?: string
-          accepted_at?: string | null
-          accepted_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_invites_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "group_invites_invited_by_fkey"
-            columns: ["invited_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "group_invites_accepted_by_fkey"
-            columns: ["accepted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       is_group_creator: { Args: { group_id_param: string }; Returns: boolean }
+      is_group_member: {
+        Args: { group_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

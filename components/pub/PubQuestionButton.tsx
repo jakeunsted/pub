@@ -226,16 +226,16 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
         <RNView style={styles.modalOverlay}>
           <Pressable style={styles.modalOverlayPressable} onPress={handleCloseDialog} />
           <View style={styles.modalContent} lightColor="#fff" darkColor="#121212">
-            <Text style={styles.modalTitle}>Select a Group</Text>
+            <Text style={styles.modalTitle}>{t('pub.selectGroup')}</Text>
             <Text style={styles.modalSubtitle}>
-              Choose a group to send your pub question to
+              {t('pub.chooseGroupToSendPubQuestion')}
             </Text>
 
             {groups.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No groups available</Text>
+                <Text style={styles.emptyText}>{t('pub.noGroupsAvailable')}</Text>
                 <Text style={styles.emptySubtext}>
-                  Create a group first to send pub questions
+                  {t('pub.createGroupFirst')}
                 </Text>
               </View>
             ) : (

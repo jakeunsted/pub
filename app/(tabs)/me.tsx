@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
-import { Avatar } from '@/components/ui/avatar';
 import { Text, View } from '@/components/Themed';
+import { Avatar } from '@/components/ui/avatar';
+import { Button, ButtonText } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/superbase';
 
@@ -71,12 +72,24 @@ export default function MeScreen() {
           {profile?.display_name || session?.user?.email || t('me.me')}
         </Text>
       </View>
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/profile-settings')}>
-        <Text style={styles.buttonText}>{t('me.settings')}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.button, styles.signOutButton]} onPress={handleSignOut}>
-        <Text style={[styles.buttonText, styles.signOutButtonText]}>{t('me.signOut')}</Text>
-      </TouchableOpacity>
+      <Button
+        style={styles.button}
+        onPress={() => router.push('/profile-settings')}
+        size="lg"
+        action="primary"
+        variant="solid"
+      >
+        <ButtonText>{t('me.settings')}</ButtonText>
+      </Button>
+      <Button
+        style={styles.button}
+        onPress={handleSignOut}
+        size="lg"
+        action="negative"
+        variant="solid"
+      >
+        <ButtonText>{t('me.signOut')}</ButtonText>
+      </Button>
     </View>
   );
 }
@@ -99,22 +112,6 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 15,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  signOutButton: {
-    backgroundColor: 'rgba(220, 38, 38, 0.8)',
-  },
-  signOutButtonText: {
-    color: '#fff',
   },
 });

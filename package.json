@@ -4,13 +4,13 @@
   "version": "1.0.0",
   "scripts": {
     "start-local": "expo start",
-    "start": "npx serve web-build -p $PORT",
+    "start": "npx serve dist -p $PORT",
     "types": "supabase gen types typescript --linked > types/database.types.ts",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "dev-client": "expo start --dev-client",
-    "build": "expo export:web"
+    "build": "expo export --platform web"
   },
   "dependencies": {
     "@expo/html-elements": "^0.10.1",

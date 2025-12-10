@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { View as RNView, ScrollView, StyleSheet } from 'react-native';
 
 import { InviteSection, MemberList, PubSessionsList, type GroupMember } from '@/components/group-detail';
-import { Text, View } from '@/components/Themed';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/lib/auth-context';
 import { getGroupInvites, type InviteData } from '@/lib/invites';
 import { supabase } from '@/lib/superbase';
@@ -102,10 +102,46 @@ export default function GroupDetailsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>{t('groups.loading')}</Text>
-      </View>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        {/* Members Section Skeleton */}
+        <RNView style={styles.skeletonSection}>
+          <Skeleton className="h-6 w-32 mb-4 rounded" />
+          {[1, 2, 3].map((i) => (
+            <RNView key={i} style={styles.skeletonMemberItem}>
+              <Skeleton className="w-12 h-12 rounded-full" />
+              <Skeleton className="h-5 flex-1 ml-4 rounded" />
+            </RNView>
+          ))}
+        </RNView>
+
+        {/* Pub Sessions Section Skeleton */}
+        <RNView style={styles.skeletonSection}>
+          <Skeleton className="h-6 w-48 mb-4 rounded" />
+          <RNView style={styles.skeletonSessionCard}>
+            <RNView style={styles.skeletonSessionHeader}>
+              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-3 w-20 rounded" />
+            </RNView>
+            <RNView style={styles.skeletonResponseButtons}>
+              <Skeleton className="h-10 flex-1 rounded" />
+              <Skeleton className="h-10 flex-1 rounded" />
+            </RNView>
+            <Skeleton className="h-4 w-24 mb-2 rounded" />
+            {[1, 2].map((i) => (
+              <RNView key={i} style={styles.skeletonMemberItem}>
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <Skeleton className="h-4 flex-1 ml-3 rounded" />
+              </RNView>
+            ))}
+          </RNView>
+        </RNView>
+
+        {/* Invite Section Skeleton */}
+        <RNView style={styles.skeletonSection}>
+          <Skeleton className="h-12 w-full mb-4 rounded" />
+          <Skeleton className="h-4 w-40 rounded" />
+        </RNView>
+      </ScrollView>
     );
   }
 
@@ -134,9 +170,32 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
   },
-  loadingText: {
-    marginTop: 10,
-    opacity: 0.6,
+  skeletonSection: {
+    marginTop: 20,
+  },
+  skeletonMemberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  skeletonSessionCard: {
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  skeletonSessionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  skeletonResponseButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+    marginBottom: 12,
   },
 });
 

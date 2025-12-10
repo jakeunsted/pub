@@ -13,6 +13,9 @@ interface PubPintButtonProps {
 
 export default function PubPintButton({ status = 'idle', onPress }: PubPintButtonProps) {
   const cheerAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim1 = useRef(new Animated.Value(0)).current;
+  const pulseAnim2 = useRef(new Animated.Value(0)).current;
+  const pulseAnim3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (status === 'cheer') {
@@ -25,6 +28,41 @@ export default function PubPintButton({ status = 'idle', onPress }: PubPintButto
       }).start();
     }
   }, [status, cheerAnim]);
+
+  // Continuous pulsing animation
+  useEffect(() => {
+    const createPulseAnimation = (animValue: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(animValue, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animValue, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const pulse1 = createPulseAnimation(pulseAnim1, 0);
+    const pulse2 = createPulseAnimation(pulseAnim2, 667);
+    const pulse3 = createPulseAnimation(pulseAnim3, 1334);
+
+    pulse1.start();
+    pulse2.start();
+    pulse3.start();
+
+    return () => {
+      pulse1.stop();
+      pulse2.stop();
+      pulse3.stop();
+    };
+  }, [pulseAnim1, pulseAnim2, pulseAnim3]);
 
   // Beer SVG component
   const BeerSvg = ({ strokeColor, fillColor }: { strokeColor: string; fillColor: string }) => (
@@ -109,53 +147,134 @@ export default function PubPintButton({ status = 'idle', onPress }: PubPintButto
     outputRange: ['-10deg', '-16deg', '-6deg', '-10deg'],
   });
 
-  return (
-    <Button
-      onPress={onPress}
-      style={[styles.button, status === 'cheer' && styles.buttonCheer]}
-      className="rounded-full"
-      variant="outline"
-      action="secondary"
-    >
-      <View style={styles.container} pointerEvents="none">
-        {/* Left beer SVG */}
-        <Animated.View
-          style={[
-            styles.beerLeft,
-            {
-              transform: [
-                { translateX: leftTranslateX },
-                { translateY: 4 },
-                { rotate: leftRotate },
-              ],
-            },
-          ]}
-        >
-          <BeerSvg strokeColor="#FFD700" fillColor="#FFA500" />
-        </Animated.View>
+  // Pulsing ring animations
+  const pulseScale1 = pulseAnim1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.8],
+  });
 
-        {/* Right beer SVG */}
-        <Animated.View
-          style={[
-            styles.beerRight,
-            {
-              transform: [
-                { translateX: rightTranslateX },
-                { translateY: -4 },
-                { rotate: rightRotate },
-                { scaleX: -1 },
-              ],
-            },
-          ]}
-        >
-          <BeerSvg strokeColor="#FF8C00" fillColor="#FFD700" />
-        </Animated.View>
-      </View>
-    </Button>
+  const pulseOpacity1 = pulseAnim1.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.6, 0.3, 0],
+  });
+
+  const pulseScale2 = pulseAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.8],
+  });
+
+  const pulseOpacity2 = pulseAnim2.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.6, 0.3, 0],
+  });
+
+  const pulseScale3 = pulseAnim3.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.8],
+  });
+
+  const pulseOpacity3 = pulseAnim3.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.6, 0.3, 0],
+  });
+
+  return (
+    <View style={styles.buttonWrapper}>
+      {/* Pulsing rings */}
+      <Animated.View
+        style={[
+          styles.pulseRing,
+          {
+            transform: [{ scale: pulseScale1 }],
+            opacity: pulseOpacity1,
+          },
+        ]}
+        pointerEvents="none"
+      />
+      <Animated.View
+        style={[
+          styles.pulseRing,
+          {
+            transform: [{ scale: pulseScale2 }],
+            opacity: pulseOpacity2,
+          },
+        ]}
+        pointerEvents="none"
+      />
+      <Animated.View
+        style={[
+          styles.pulseRing,
+          {
+            transform: [{ scale: pulseScale3 }],
+            opacity: pulseOpacity3,
+          },
+        ]}
+        pointerEvents="none"
+      />
+
+      <Button
+        onPress={onPress}
+        style={[styles.button, status === 'cheer' && styles.buttonCheer]}
+        className="rounded-full"
+        variant="outline"
+        action="secondary"
+      >
+        <View style={styles.container} pointerEvents="none">
+          {/* Left beer SVG */}
+          <Animated.View
+            style={[
+              styles.beerLeft,
+              {
+                transform: [
+                  { translateX: leftTranslateX },
+                  { translateY: 4 },
+                  { rotate: leftRotate },
+                ],
+              },
+            ]}
+          >
+            <BeerSvg strokeColor="#FFD700" fillColor="#FFA500" />
+          </Animated.View>
+
+          {/* Right beer SVG */}
+          <Animated.View
+            style={[
+              styles.beerRight,
+              {
+                transform: [
+                  { translateX: rightTranslateX },
+                  { translateY: -4 },
+                  { rotate: rightRotate },
+                  { scaleX: -1 },
+                ],
+              },
+            ]}
+          >
+            <BeerSvg strokeColor="#FF8C00" fillColor="#FFD700" />
+          </Animated.View>
+        </View>
+      </Button>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  buttonWrapper: {
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#D1D6EE',
+    backgroundColor: 'transparent',
+  },
   button: {
     width: 100,
     height: 100,
@@ -174,6 +293,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     padding: 0,
+    zIndex: 10,
     ...(Platform.OS === 'web' && {
       minWidth: 100,
       maxWidth: 100,

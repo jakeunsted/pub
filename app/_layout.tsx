@@ -117,6 +117,7 @@ function RootLayoutNav() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
               <Stack.Screen name="login" options={{ headerShown: false }} />
               <Stack.Screen name="register" options={{ headerShown: false }} />
+              <Stack.Screen name="invite" options={{ headerShown: false }} />
               <Stack.Screen name="invite-accept" options={{ headerShown: false }} />
               <Stack.Screen name="profile-settings" options={{ presentation: 'modal', title: 'Profile Settings' }} />
               <Stack.Screen name="group-details" options={{ presentation: 'card', title: 'Group Details' }} />

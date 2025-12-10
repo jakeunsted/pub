@@ -4,8 +4,9 @@ import { useFonts } from 'expo-font';
 import { router, Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { Platform, View } from 'react-native';
 import 'react-native-reanimated';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
@@ -67,6 +68,7 @@ function RootLayoutNav() {
   const { preference, effectiveTheme } = useThemePreference();
   const { session, loading } = useAuth();
   const segments = useSegments();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (loading) return;
@@ -86,20 +88,42 @@ function RootLayoutNav() {
   // Also use effectiveTheme for React Navigation theme
   const navigationTheme = effectiveTheme === 'dark' ? DarkTheme : DefaultTheme;
 
+  // iOS safe area background color - grey in light mode, lighter in dark mode
+  const safeAreaBackgroundColor = Platform.OS === 'ios'
+    ? effectiveTheme === 'dark'
+      ? '#1C1C1E' // Dark grey for dark mode
+      : '#858585' // Light grey for light mode
+    : 'transparent';
+
   return (
     <GluestackUIProvider key={gluestackMode} mode={gluestackMode}>
       <ThemeProvider value={navigationTheme}>
-        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="register" options={{ headerShown: false }} />
-            <Stack.Screen name="invite-accept" options={{ headerShown: false }} />
-            <Stack.Screen name="profile-settings" options={{ presentation: 'modal', title: 'Profile Settings' }} />
-            <Stack.Screen name="group-details" options={{ presentation: 'card', title: 'Group Details' }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </Stack>
-        </SafeAreaView>
+        <View style={{ flex: 1 }}>
+          {Platform.OS === 'ios' && insets.top > 0 && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: insets.top,
+                backgroundColor: safeAreaBackgroundColor,
+                zIndex: 1000,
+              }}
+            />
+          )}
+          <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="register" options={{ headerShown: false }} />
+              <Stack.Screen name="invite-accept" options={{ headerShown: false }} />
+              <Stack.Screen name="profile-settings" options={{ presentation: 'modal', title: 'Profile Settings' }} />
+              <Stack.Screen name="group-details" options={{ presentation: 'card', title: 'Group Details' }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack>
+          </SafeAreaView>
+        </View>
       </ThemeProvider>
     </GluestackUIProvider>
   );

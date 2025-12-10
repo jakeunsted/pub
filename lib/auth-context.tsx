@@ -26,11 +26,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Initialize push notifications if user is already logged in
       if (session?.user?.id) {
         // Check if push notifications are enabled before initializing
-        supabase
-          .from('profiles')
-          .select('push_notifications_enabled')
-          .eq('id', session.user.id)
-          .single()
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .select('push_notifications_enabled')
+            .eq('id', session.user.id)
+            .single()
+        )
           .then(({ data }) => {
             if (data?.push_notifications_enabled !== false) {
               // Initialize push notifications if enabled (default is true)
@@ -39,13 +41,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             }
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             console.error('Error checking push notification preference:', error);
             // Default to initializing if we can't check preference
             initializePushNotifications(session.user.id).catch((err) => {
               console.error('Error initializing push notifications:', err);
             });
           });
+
+        // Update profile display_name from user metadata if needed
+        const displayNameFromMetadata = session.user.user_metadata?.display_name;
+        if (displayNameFromMetadata) {
+          Promise.resolve(
+            supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('id', session.user.id)
+              .single()
+          )
+            .then(({ data: profile }) => {
+              // If display_name is null or matches the email, update it from metadata
+              if (profile && (!profile.display_name || profile.display_name === session.user.email)) {
+                void Promise.resolve(
+                  supabase
+                    .from('profiles')
+                    .update({ display_name: displayNameFromMetadata })
+                    .eq('id', session.user.id)
+                ).then(({ error }) => {
+                  if (error && error.code !== '42501') {
+                    console.error('Error updating profile display_name:', error);
+                  }
+                });
+              }
+            })
+            .catch((error: unknown) => {
+              // Silently fail - profile might not exist yet or RLS might block it
+              console.error('Error checking profile for display_name update:', error);
+            });
+        }
       }
     });
 
@@ -60,11 +93,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle push notifications
       if (session?.user?.id) {
         // Check if push notifications are enabled before initializing
-        supabase
-          .from('profiles')
-          .select('push_notifications_enabled')
-          .eq('id', session.user.id)
-          .single()
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .select('push_notifications_enabled')
+            .eq('id', session.user.id)
+            .single()
+        )
           .then(({ data }) => {
             if (data?.push_notifications_enabled !== false) {
               // Initialize push notifications if enabled (default is true)
@@ -73,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             }
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             console.error('Error checking push notification preference:', error);
             // Default to initializing if we can't check preference
             initializePushNotifications(session.user.id).catch((err) => {
@@ -95,6 +130,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           acceptInvite(pendingToken, session.user.id).catch((error) => {
             console.error('Error accepting pending invite:', error);
           });
+        }
+
+        // Update profile display_name from user metadata if it was set during registration
+        // This handles the case where email confirmation was required and the profile
+        // was created with email as display_name
+        const displayNameFromMetadata = session.user.user_metadata?.display_name;
+        if (displayNameFromMetadata) {
+          // Check current profile to see if display_name needs updating
+          Promise.resolve(
+            supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('id', session.user.id)
+              .single()
+          )
+            .then(({ data: profile }) => {
+              // If display_name is null or matches the email, update it from metadata
+              if (profile && (!profile.display_name || profile.display_name === session.user.email)) {
+                void Promise.resolve(
+                  supabase
+                    .from('profiles')
+                    .update({ display_name: displayNameFromMetadata })
+                    .eq('id', session.user.id)
+                ).then(({ error }) => {
+                  if (error && error.code !== '42501') {
+                    console.error('Error updating profile display_name:', error);
+                  }
+                });
+              }
+            })
+            .catch((error: unknown) => {
+              // Silently fail - profile might not exist yet or RLS might block it
+              console.error('Error checking profile for display_name update:', error);
+            });
         }
       }
     });

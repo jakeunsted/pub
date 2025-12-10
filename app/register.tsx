@@ -47,6 +47,11 @@ export default function RegisterScreen() {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          display_name: displayName.trim(),
+        },
+      },
     });
 
     if (authError) {
@@ -81,7 +86,12 @@ export default function RegisterScreen() {
         });
 
       if (profileError) {
-        console.error('Error creating/updating profile:', profileError);
+        // RLS policy violation (42501) is expected when email confirmation is required
+        // The user doesn't have an active session yet, so they can't update their profile
+        // This is acceptable - the profile will be updated after email confirmation
+        if (profileError.code !== '42501') {
+          console.error('Error creating/updating profile:', profileError);
+        }
         // Don't block registration - user can update profile later if needed
         // The trigger might have created a profile without display_name, which is acceptable
       }
@@ -116,7 +126,11 @@ export default function RegisterScreen() {
       });
 
     if (profileError) {
-      console.error('Error creating/updating profile:', profileError);
+      // RLS policy violation (42501) is expected in some cases
+      // Only log unexpected errors
+      if (profileError.code !== '42501') {
+        console.error('Error creating/updating profile:', profileError);
+      }
       // Don't block registration - user can update profile later if needed
     }
 

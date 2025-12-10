@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
     const EXPO_PUSH_API_KEY = Deno.env.get('EXPO_PUSH_API_KEY');
 
     // Get base URL for deep links
-    const APP_BASE_URL = Deno.env.get('EXPO_PUBLIC_APP_URL') || 'https://your-app-domain.com';
+    const APP_BASE_URL = Deno.env.get('EXPO_PUBLIC_APP_URL') || 'https://pub.jakeunsted.uk';
 
     // Construct deep link URL (goes to home page where pending requests are shown)
     const deepLinkUrl = `${APP_BASE_URL}/(tabs)`;

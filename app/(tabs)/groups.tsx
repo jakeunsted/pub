@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Alert, View as RNView, StyleSheet } from 'react-native';
 
 import {
   CreateGroupForm,
@@ -9,7 +9,8 @@ import {
   GroupList,
   GroupsHeader,
 } from '@/components/group';
-import { Text, View } from '@/components/Themed';
+import { View } from '@/components/Themed';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/superbase';
 
@@ -204,8 +205,21 @@ export default function MyGroupsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>{t('groups.loading')}</Text>
+        <RNView style={styles.skeletonHeader}>
+          <Skeleton className="h-8 w-32 rounded" />
+          <Skeleton className="h-10 w-28 rounded" />
+        </RNView>
+        {[1, 2, 3].map((i) => (
+          <RNView key={i} style={styles.skeletonGroupItem}>
+            <Skeleton className="h-5 w-40 mb-3 rounded" />
+            <Skeleton className="h-4 w-28 mb-4 rounded" />
+            <RNView style={styles.skeletonMembersRow}>
+              {[1, 2, 3, 4, 5].map((j) => (
+                <Skeleton key={j} className="w-8 h-8 rounded-full mr-2" />
+              ))}
+            </RNView>
+          </RNView>
+        ))}
       </View>
     );
   }
@@ -239,8 +253,19 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  loadingText: {
-    marginTop: 10,
-    opacity: 0.6,
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  skeletonGroupItem: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  skeletonMembersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

@@ -5,6 +5,7 @@ import { Alert, Modal, Pressable, Text as RNText, View as RNView, ScrollView, St
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, ButtonText } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/superbase';
 import PubPintButton from './PubPintButton';
@@ -30,6 +31,7 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
   const { t } = useTranslation();
   const { session } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [status, setStatus] = useState<'idle' | 'cheer'>('idle');
 
@@ -45,6 +47,7 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
     }
 
     try {
+      setLoading(true);
       // First get the group IDs the user is a member of
       const { data: memberships, error: membershipError } = await supabase
         .from('group_members')
@@ -53,6 +56,7 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
 
       if (membershipError) {
         console.error('Error loading memberships:', membershipError);
+        setGroups([]);
         return;
       }
 
@@ -71,6 +75,7 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
 
       if (groupsError) {
         console.error('Error loading groups:', groupsError);
+        setGroups([]);
         return;
       }
 
@@ -120,6 +125,9 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
       setGroups(groupsWithMembers as Group[]);
     } catch (error: any) {
       console.error('Failed to load groups:', error);
+      setGroups([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -218,6 +226,7 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
 
   const handleCloseDialog = () => {
     setShowDialog(false);
+    setLoading(false);
   };
 
   const groupButtonBg = useThemeColor(
@@ -244,7 +253,36 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
               {t('pub.chooseGroupToSendPubQuestion')}
             </Text>
 
-            {groups.length === 0 ? (
+            {loading ? (
+              <ScrollView
+                style={styles.groupsScrollView}
+                contentContainerStyle={styles.groupsListContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {[1, 2, 3].map((i) => (
+                  <RNView key={i} style={[styles.skeletonGroupButton, { backgroundColor: groupButtonBg }]}>
+                    <RNView style={styles.groupButtonContent}>
+                      <RNView style={styles.groupButtonHeader}>
+                        <Skeleton className="h-6 w-40 rounded" />
+                      </RNView>
+                      <RNView style={styles.membersContainer}>
+                        {[1, 2, 3, 4].map((j) => (
+                          <RNView
+                            key={j}
+                            style={[
+                              styles.avatarWrapper,
+                              j > 1 && styles.avatarOverlap,
+                            ]}
+                          >
+                            <Skeleton className="w-8 h-8 rounded-full" />
+                          </RNView>
+                        ))}
+                      </RNView>
+                    </RNView>
+                  </RNView>
+                ))}
+              </ScrollView>
+            ) : groups.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>{t('pub.noGroupsAvailable')}</Text>
                 <Text style={styles.emptySubtext}>
@@ -393,6 +431,13 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  skeletonGroupButton: {
+    marginBottom: 12,
+    minHeight: 82,
+    borderRadius: 20,
+    width: '100%',
+    padding: 15,
   },
 });
 

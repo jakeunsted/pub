@@ -189,6 +189,20 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
         throw new Error(requestError.message || 'Failed to create pub request');
       }
 
+      // Automatically create a response for the requester (they're implicitly accepting)
+      const { error: responseError } = await supabase
+        .from('pub_responses')
+        .insert({
+          request_id: pubRequest.id,
+          user_id: session.user.id,
+          response: true,
+          responded_at: new Date().toISOString(),
+        });
+
+      if (responseError) {
+        console.error('Failed to create auto-response for requester:', responseError);
+      }
+
       // Get requester's display name for notifications
       const { data: requesterProfile } = await supabase
         .from('profiles')

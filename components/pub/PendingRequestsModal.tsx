@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, Text as RNText, View as RNView, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text as RNText, View as RNView, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
 import { Avatar } from '@/components/ui/avatar';
@@ -36,6 +36,7 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
   const [requests, setRequests] = useState<PubRequestWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [respondingToRequestId, setRespondingToRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -79,14 +80,16 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
     }
   }, [session, refreshTrigger]);
 
-  const loadPendingRequests = async () => {
+  const loadPendingRequests = async (showLoading = true) => {
     if (!session?.user?.id) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
 
       // Get all group IDs the user is a member of
       const { data: memberships, error: membershipError } = await supabase
@@ -232,7 +235,9 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
     } catch (error: any) {
       console.error('Failed to load pending requests:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -281,7 +286,36 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
       return;
     }
 
+    // Prevent multiple simultaneous responses to the same request
+    if (respondingToRequestId === requestId) {
+      return;
+    }
+
     try {
+      setRespondingToRequestId(requestId);
+
+      // Optimistically update the UI
+      setRequests((prevRequests) =>
+        prevRequests.map((req) => {
+          if (req.id !== requestId) return req;
+
+          const updatedMembers = req.members.map((member) => {
+            if (member.user_id === session.user.id) {
+              return {
+                ...member,
+                status: response ? 'accepted' : 'denied' as 'accepted' | 'denied',
+              };
+            }
+            return member;
+          });
+
+          return {
+            ...req,
+            members: updatedMembers,
+          };
+        }) as typeof prevRequests
+      );
+
       // Check if response already exists
       const { data: existingResponse } = await supabase
         .from('pub_responses')
@@ -316,10 +350,14 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
       }
 
       // Reload requests to show updated status
-      loadPendingRequests();
+      await loadPendingRequests(false);
     } catch (error: any) {
       console.error('Failed to respond to request:', error);
+      // Revert optimistic update on error
+      await loadPendingRequests(false);
       Alert.alert(t('common.error'), error.message || 'Failed to respond to request');
+    } finally {
+      setRespondingToRequestId(null);
     }
   };
 
@@ -342,8 +380,8 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
     'tabIconDefault'
   );
 
-  // Don't show if no requests
-  if (loading || requests.length === 0) {
+  // Don't show if no requests (but allow showing during response loading)
+  if ((loading && requests.length === 0) || (!loading && requests.length === 0)) {
     return null;
   }
 
@@ -402,6 +440,7 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
                         size="md"
                         onPress={() => handleRespond(request.id, true)}
                         style={styles.responseButton}
+                        disabled={respondingToRequestId === request.id}
                       >
                         <ButtonText>{t('pub.accept')}</ButtonText>
                       </Button>
@@ -411,6 +450,7 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
                         size="md"
                         onPress={() => handleRespond(request.id, false)}
                         style={styles.responseButton}
+                        disabled={respondingToRequestId === request.id}
                       >
                         <ButtonText>{t('pub.deny')}</ButtonText>
                       </Button>
@@ -421,26 +461,38 @@ export default function PendingRequestsModal({ refreshTrigger }: PendingRequests
                     <Text style={[styles.membersTitle, { color: textColor }]}>
                       Members ({request.members.length})
                     </Text>
-                    {request.members.map((member) => (
-                      <RNView key={member.user_id} style={styles.memberRow}>
-                        <RNView style={styles.memberInfo}>
-                          <Avatar name={member.display_name || undefined} size="small" />
-                          <Text style={[styles.memberName, { color: textColor }]} numberOfLines={1}>
-                            {member.display_name || 'Unknown User'}
-                          </Text>
+                    {request.members.map((member) => {
+                      const isUpdating = respondingToRequestId === request.id && member.user_id === session?.user?.id;
+                      return (
+                        <RNView key={member.user_id} style={styles.memberRow}>
+                          <RNView style={styles.memberInfo}>
+                            <Avatar name={member.display_name || undefined} size="small" />
+                            <Text style={[styles.memberName, { color: textColor }]} numberOfLines={1}>
+                              {member.display_name || 'Unknown User'}
+                            </Text>
+                          </RNView>
+                          <RNView
+                            style={[
+                              styles.statusBadge,
+                              { backgroundColor: getStatusColor(member.status) },
+                            ]}
+                          >
+                            {isUpdating ? (
+                              <RNView style={styles.statusLoadingContainer}>
+                                <ActivityIndicator size="small" color="#fff" />
+                                <Text style={styles.statusText}>
+                                  {t(`pub.memberStatus.${member.status}`)}
+                                </Text>
+                              </RNView>
+                            ) : (
+                              <Text style={styles.statusText}>
+                                {t(`pub.memberStatus.${member.status}`)}
+                              </Text>
+                            )}
+                          </RNView>
                         </RNView>
-                        <RNView
-                          style={[
-                            styles.statusBadge,
-                            { backgroundColor: getStatusColor(member.status) },
-                          ]}
-                        >
-                          <Text style={styles.statusText}>
-                            {t(`pub.memberStatus.${member.status}`)}
-                          </Text>
-                        </RNView>
-                      </RNView>
-                    ))}
+                      );
+                    })}
                   </RNView>
                 </RNView>
               );
@@ -567,6 +619,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  statusLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
 

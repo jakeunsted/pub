@@ -97,13 +97,6 @@ export function PubSessionsList({ groupId }: PubSessionsListProps) {
       // Fetch details for each request
       const sessionsWithMembers = await Promise.all(
         pubRequests.map(async (request) => {
-          // Get requester name
-          const { data: requesterData } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('id', request.requested_by)
-            .single();
-
           // Get all responses for this request (to find current user's response)
           const { data: allResponses } = await supabase
             .from('pub_responses')
@@ -115,14 +108,14 @@ export function PubSessionsList({ groupId }: PubSessionsListProps) {
             ? allResponses?.find((r) => r.user_id === session.user.id)?.response ?? null
             : null;
 
-          // Get accepted responses
+          // Get accepted responses (requester is now automatically included via pub_response)
           const acceptedResponses = allResponses?.filter((r) => r.response === true) || [];
 
           if (acceptedResponses.length === 0) {
             return {
               id: request.id,
               requested_by: request.requested_by,
-              requested_by_name: requesterData?.display_name || null,
+              requested_by_name: null,
               created_at: request.created_at,
               expires_at: request.expires_at,
               acceptedMembers: [],
@@ -130,8 +123,9 @@ export function PubSessionsList({ groupId }: PubSessionsListProps) {
             };
           }
 
-          // Get profiles for accepted members (including requester who is auto-accepted)
-          const userIds = [...acceptedResponses.map((r) => r.user_id), request.requested_by];
+          // Get profiles for accepted members (requester is already in acceptedResponses)
+          // Deduplicate user IDs to prevent duplicate keys
+          const userIds = [...new Set(acceptedResponses.map((r) => r.user_id))];
           const { data: profilesData } = await supabase
             .from('profiles')
             .select('id, display_name')
@@ -141,16 +135,19 @@ export function PubSessionsList({ groupId }: PubSessionsListProps) {
             (profilesData || []).map((p) => [p.id, p.display_name])
           );
 
-          // Map accepted members (including requester)
+          // Map accepted members (deduplicated)
           const acceptedMembers: GroupMember[] = userIds.map((userId) => ({
             user_id: userId,
             display_name: profileMap.get(userId) || null,
           }));
 
+          // Get requester name from profileMap (they're in acceptedMembers now)
+          const requested_by_name = profileMap.get(request.requested_by) || null;
+
           return {
             id: request.id,
             requested_by: request.requested_by,
-            requested_by_name: requesterData?.display_name || null,
+            requested_by_name,
             created_at: request.created_at,
             expires_at: request.expires_at,
             acceptedMembers,

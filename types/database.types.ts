@@ -39,6 +39,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      device_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          platform: string
+          token: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          platform: string
+          token: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          platform?: string
+          token?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       group_invites: {
         Row: {
           accepted_at: string | null
@@ -152,16 +179,19 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          push_notifications_enabled: boolean | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id: string
+          push_notifications_enabled?: boolean | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
+          push_notifications_enabled?: boolean | null
         }
         Relationships: []
       }

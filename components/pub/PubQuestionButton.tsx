@@ -181,6 +181,31 @@ export default function PubQuestionButton({ onQuestionSent }: PubQuestionButtonP
         throw new Error(requestError.message || 'Failed to create pub request');
       }
 
+      // Get requester's display name for notifications
+      const { data: requesterProfile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', session.user.id)
+        .single();
+
+      const requesterName = requesterProfile?.display_name || 'Someone';
+
+      // Send notifications to group members (don't block on errors)
+      try {
+        await supabase.functions.invoke('send-pub-request-notifications', {
+          body: {
+            requestId: pubRequest.id,
+            groupId: group.id,
+            requestedBy: session.user.id,
+            groupName: group.name,
+            requesterName,
+          },
+        });
+      } catch (notificationError) {
+        // Log but don't fail the request creation
+        console.error('Failed to send notifications:', notificationError);
+      }
+
       // Request created successfully, animation will complete naturally
       onQuestionSent?.(group.id, group.name);
       setStatus('idle');

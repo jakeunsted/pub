@@ -1,18 +1,24 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, View as RNView, StyleSheet } from 'react-native';
+import { Modal, Pressable, View as RNView, StyleSheet, Switch } from 'react-native';
 
 import { Text, View, useThemeColor } from '@/components/Themed';
 import { Button, ButtonText } from '@/components/ui/button';
 import { FormControl, FormControlLabel, FormControlLabelText } from '@/components/ui/form-control';
+import { useAuth } from '@/lib/auth-context';
+import { cleanupPushNotifications, initializePushNotifications } from '@/lib/push-notifications';
+import { supabase } from '@/lib/superbase';
 import { useThemePreference, type ThemePreference } from '@/lib/theme-context';
 
 export default function ProfileSettingsScreen() {
   const { t } = useTranslation();
   const { preference, setPreference } = useThemePreference();
+  const { session } = useAuth();
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
   const textColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor(
     { light: '#fff', dark: '#121212' },
@@ -22,6 +28,70 @@ export default function ProfileSettingsScreen() {
     { light: 'rgba(0, 0, 0, 0.1)', dark: 'rgba(255, 255, 255, 0.1)' },
     'tabIconDefault'
   );
+
+  // Load push notification preference
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadPushNotificationPreference();
+    }
+  }, [session]);
+
+  const loadPushNotificationPreference = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('push_notifications_enabled')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading push notification preference:', error);
+        setLoading(false);
+        return;
+      }
+
+      setPushNotificationsEnabled(data?.push_notifications_enabled ?? true);
+    } catch (error) {
+      console.error('Error loading push notification preference:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePushNotificationToggle = async (enabled: boolean) => {
+    if (!session?.user?.id) return;
+
+    setPushNotificationsEnabled(enabled);
+
+    try {
+      // Update preference in database
+      const { error } = await supabase
+        .from('profiles')
+        .update({ push_notifications_enabled: enabled })
+        .eq('id', session.user.id);
+
+      if (error) {
+        console.error('Error updating push notification preference:', error);
+        // Revert on error
+        setPushNotificationsEnabled(!enabled);
+        return;
+      }
+
+      // If enabling, initialize push notifications
+      if (enabled) {
+        await initializePushNotifications(session.user.id);
+      } else {
+        // If disabling, clean up all device tokens
+        await cleanupPushNotifications(session.user.id);
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      // Revert on error
+      setPushNotificationsEnabled(!enabled);
+    }
+  };
 
   const handleThemeChange = (newPreference: ThemePreference) => {
     setPreference(newPreference);
@@ -58,6 +128,27 @@ export default function ProfileSettingsScreen() {
             <ButtonText style={styles.dropdownButtonText}>{getThemeLabel()}</ButtonText>
             <FontAwesome name="chevron-down" size={14} color={textColor} style={styles.chevron} />
           </Button>
+        </FormControl>
+      </View>
+      <View style={styles.section}>
+        <FormControl>
+          <FormControlLabel>
+            <FormControlLabelText>{t('profileSettings.pushNotifications')}</FormControlLabelText>
+          </FormControlLabel>
+          <RNView style={styles.switchContainer}>
+            <Switch
+              value={pushNotificationsEnabled}
+              onValueChange={handlePushNotificationToggle}
+              disabled={loading}
+              trackColor={{ false: '#767577', true: '#007AFF' }}
+              thumbColor={pushNotificationsEnabled ? '#fff' : '#f4f3f4'}
+            />
+            <Text style={[styles.switchLabel, { color: textColor }]}>
+              {pushNotificationsEnabled
+                ? t('profileSettings.pushNotificationsEnabled')
+                : t('profileSettings.pushNotificationsDisabled')}
+            </Text>
+          </RNView>
         </FormControl>
       </View>
       <Button
@@ -169,6 +260,15 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     width: '100%',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  switchLabel: {
+    fontSize: 16,
+    flex: 1,
   },
 });
 

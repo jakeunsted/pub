@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { router, Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -51,11 +52,13 @@ export default function RootLayout() {
   }
 
   return (
-    <AppThemeProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </AppThemeProvider>
+    <SafeAreaProvider>
+      <AppThemeProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </AppThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -86,15 +89,17 @@ function RootLayoutNav() {
   return (
     <GluestackUIProvider key={gluestackMode} mode={gluestackMode}>
       <ThemeProvider value={navigationTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="invite-accept" options={{ headerShown: false }} />
-          <Stack.Screen name="profile-settings" options={{ presentation: 'modal', title: 'Profile Settings' }} />
-          <Stack.Screen name="group-details" options={{ presentation: 'card', title: 'Group Details' }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Pub' }} />
+            <Stack.Screen name="login" options={{ headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
+            <Stack.Screen name="invite-accept" options={{ headerShown: false }} />
+            <Stack.Screen name="profile-settings" options={{ presentation: 'modal', title: 'Profile Settings' }} />
+            <Stack.Screen name="group-details" options={{ presentation: 'card', title: 'Group Details' }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </Stack>
+        </SafeAreaView>
       </ThemeProvider>
     </GluestackUIProvider>
   );

@@ -237,6 +237,7 @@ Deno.serve(async (req) => {
                 groupId,
                 type: 'pub_request',
               },
+              priority: 'high',
             }));
 
             const expoResponse = await fetch('https://exp.host/--/api/v2/push/send', {

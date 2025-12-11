@@ -10,11 +10,13 @@ import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { diagnoseNotificationSetup, setupNotificationListeners } from '@/lib/push-notifications';
 import { ThemeProvider as AppThemeProvider, useThemePreference } from '@/lib/theme-context';
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
 import '@/lib/i18n';
+import * as Notifications from 'expo-notifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -82,6 +84,46 @@ function RootLayoutNav() {
       router.replace('/(tabs)');
     }
   }, [session, loading, segments]);
+
+  // Set up notification listeners and run diagnostics
+  useEffect(() => {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    // Run diagnostics on mount (only once per session)
+    diagnoseNotificationSetup().catch((error) => {
+      console.error('[PUSH] Error running diagnostics:', error);
+    });
+
+    const cleanup = setupNotificationListeners(
+      // Handle notification received while app is in foreground
+      (notification) => {
+        console.log('[PUSH] Notification received in foreground:', notification);
+        // The notification handler will display it, but we can add custom logic here if needed
+      },
+      // Handle notification tapped
+      (response) => {
+        console.log('[PUSH] Notification tapped:', response);
+        const data = response.notification.request.content.data;
+
+        // Navigate based on notification type
+        if (data?.type === 'pub_request' && session?.user?.id) {
+          // Navigate to home page where pending requests are shown
+          router.push('/(tabs)');
+        } else if (data?.requestId && session?.user?.id) {
+          // If there's a specific requestId, we could navigate to it
+          // For now, just go to home page
+          router.push('/(tabs)');
+        } else if (!session?.user?.id) {
+          // If not logged in, go to login page
+          router.push('/login');
+        }
+      }
+    );
+
+    return cleanup;
+  }, [session]);
 
   // Use effectiveTheme which updates when preference changes
   const gluestackMode = effectiveTheme;

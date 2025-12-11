@@ -13,21 +13,50 @@ const isNotificationsAvailable = () => {
   }
 };
 
+// Configure Android notification channel (required for Android 8.0+)
+if (isNotificationsAvailable() && Platform.OS === 'android') {
+  try {
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      sound: 'default',
+      enableVibrate: true,
+      showBadge: true,
+    }).then(() => {
+      console.log('[PUSH] ✅ Android notification channel configured');
+    }).catch((error) => {
+      console.error('[PUSH] ❌ Error configuring Android notification channel:', error);
+    });
+  } catch (error) {
+    console.error('[PUSH] ❌ Error setting up Android notification channel:', error);
+  }
+}
+
 // Configure notification handler (only if available)
 if (isNotificationsAvailable()) {
   try {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+      handleNotification: async (notification) => {
+        console.log('[PUSH] Notification handler called:', {
+          title: notification.request.content.title,
+          body: notification.request.content.body,
+          data: notification.request.content.data,
+        });
+        return {
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        };
+      },
     });
+    console.log('[PUSH] ✅ Notification handler configured successfully');
   } catch (error) {
     // Silently fail in Expo Go
-    console.log('Push notifications not available in Expo Go. Use a development build for full functionality.');
+    console.log('[PUSH] Push notifications not available in Expo Go. Use a development build for full functionality.');
   }
 }
 
@@ -36,22 +65,27 @@ if (isNotificationsAvailable()) {
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
   if (!isNotificationsAvailable()) {
-    console.log('Push notifications not available in Expo Go. Use a development build.');
+    console.log('[PUSH] Push notifications not available in Expo Go. Use a development build.');
     return false;
   }
 
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log(`[PUSH] Current permission status: ${existingStatus}`);
     let finalStatus = existingStatus;
 
     if (existingStatus !== 'granted') {
+      console.log('[PUSH] Requesting notification permissions...');
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
+      console.log(`[PUSH] Permission request result: ${status}`);
+    } else {
+      console.log('[PUSH] ✅ Permissions already granted');
     }
 
     return finalStatus === 'granted';
   } catch (error) {
-    console.error('Error requesting notification permissions:', error);
+    console.error('[PUSH] ❌ Error requesting notification permissions:', error);
     return false;
   }
 }
@@ -61,27 +95,36 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  */
 export async function getExpoPushToken(): Promise<string | null> {
   if (!isNotificationsAvailable()) {
-    console.log('Push notifications not available in Expo Go. Use a development build.');
+    console.log('[PUSH] Push notifications not available in Expo Go. Use a development build.');
     return null;
   }
 
   try {
-    const hasPermission = await requestNotificationPermissions();
-    if (!hasPermission) {
-      console.log('Notification permissions not granted');
+    const projectId = process.env.EXPO_PUBLIC_PROJECT_ID;
+    console.log(`[PUSH] Getting push token with project ID: ${projectId || 'NOT SET'}`);
+    
+    if (!projectId) {
+      console.error('[PUSH] ❌ EXPO_PUBLIC_PROJECT_ID is not set!');
       return null;
     }
 
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) {
+      console.log('[PUSH] ❌ Notification permissions not granted');
+      return null;
+    }
+
+    console.log('[PUSH] Requesting Expo push token...');
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+      projectId,
     });
 
-    console.log('Expo push token:', tokenData.data);
+    console.log('[PUSH] ✅ Expo push token obtained:', tokenData.data);
 
     return tokenData.data;
-  } catch (error) {
+  } catch (error: any) {
     // In Expo Go, this will fail - that's expected
-    console.log('Push notifications require a development build. Error:', error);
+    console.error('[PUSH] ❌ Error getting push token:', error?.message || error);
     return null;
   }
 }
@@ -157,15 +200,23 @@ export async function unregisterDeviceToken(token: string, userId: string): Prom
  * Call this when the user logs in or when the app starts
  */
 export async function initializePushNotifications(userId: string): Promise<{ success: boolean; error?: Error }> {
+  console.log(`[PUSH] Initializing push notifications for user: ${userId}`);
   try {
     const token = await getExpoPushToken();
     if (!token) {
+      console.error('[PUSH] ❌ Failed to get push token');
       return { success: false, error: new Error('Failed to get push token') };
     }
 
-    return await registerDeviceToken(token, userId);
+    const result = await registerDeviceToken(token, userId);
+    if (result.success) {
+      console.log('[PUSH] ✅ Push notifications initialized successfully');
+    } else {
+      console.error('[PUSH] ❌ Failed to register device token:', result.error);
+    }
+    return result;
   } catch (error: any) {
-    console.error('Error initializing push notifications:', error);
+    console.error('[PUSH] ❌ Error initializing push notifications:', error);
     return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
   }
 }
@@ -190,5 +241,119 @@ export async function cleanupPushNotifications(userId: string): Promise<void> {
   } catch (error) {
     console.error('Error cleaning up push notifications:', error);
   }
+}
+
+/**
+ * Sets up notification listeners for receiving and handling push notifications
+ * Returns cleanup function to remove listeners
+ */
+export function setupNotificationListeners(
+  onNotificationReceived?: (notification: Notifications.Notification) => void,
+  onNotificationTapped?: (response: Notifications.NotificationResponse) => void
+): () => void {
+  if (!isNotificationsAvailable()) {
+    console.log('[PUSH] Push notifications not available. Skipping listener setup.');
+    return () => {};
+  }
+
+  try {
+    console.log('[PUSH] Setting up notification listeners...');
+    
+    // Listener for notifications received while app is in foreground
+    const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
+      console.log('[PUSH] ✅ Notification received in foreground:', JSON.stringify({
+        title: notification.request.content.title,
+        body: notification.request.content.body,
+        data: notification.request.content.data,
+      }, null, 2));
+      onNotificationReceived?.(notification);
+    });
+
+    // Listener for when user taps on a notification
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      console.log('[PUSH] ✅ Notification tapped:', JSON.stringify({
+        title: response.notification.request.content.title,
+        body: response.notification.request.content.body,
+        data: response.notification.request.content.data,
+      }, null, 2));
+      onNotificationTapped?.(response);
+    });
+
+    console.log('[PUSH] ✅ Notification listeners set up successfully');
+
+    // Return cleanup function
+    return () => {
+      receivedSubscription.remove();
+      responseSubscription.remove();
+      console.log('[PUSH] Notification listeners removed');
+    };
+  } catch (error) {
+    console.error('[PUSH] ❌ Error setting up notification listeners:', error);
+    return () => {};
+  }
+}
+
+/**
+ * Diagnostic function to check notification setup status
+ */
+export async function diagnoseNotificationSetup(): Promise<void> {
+  console.log('\n[PUSH DIAGNOSTICS] ========================================');
+  console.log('[PUSH DIAGNOSTICS] Starting notification diagnostics...\n');
+
+  // Check if notifications are available
+  const available = isNotificationsAvailable();
+  console.log(`[PUSH DIAGNOSTICS] Notifications available: ${available}`);
+
+  if (!available) {
+    console.log('[PUSH DIAGNOSTICS] ❌ Notifications not available. This might be Expo Go.');
+    console.log('[PUSH DIAGNOSTICS] ========================================\n');
+    return;
+  }
+
+  // Check permissions
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    console.log(`[PUSH DIAGNOSTICS] Permission status: ${status}`);
+    if (status !== 'granted') {
+      console.log('[PUSH DIAGNOSTICS] ⚠️  Permissions not granted!');
+    }
+  } catch (error) {
+    console.error('[PUSH DIAGNOSTICS] ❌ Error checking permissions:', error);
+  }
+
+  // Check project ID
+  const projectId = process.env.EXPO_PUBLIC_PROJECT_ID;
+  console.log(`[PUSH DIAGNOSTICS] Project ID: ${projectId || 'NOT SET'}`);
+  if (!projectId) {
+    console.log('[PUSH DIAGNOSTICS] ❌ EXPO_PUBLIC_PROJECT_ID is not set!');
+  }
+
+  // Try to get push token
+  try {
+    console.log('[PUSH DIAGNOSTICS] Attempting to get push token...');
+    const token = await getExpoPushToken();
+    if (token) {
+      console.log(`[PUSH DIAGNOSTICS] ✅ Push token obtained: ${token.substring(0, 30)}...`);
+    } else {
+      console.log('[PUSH DIAGNOSTICS] ❌ Failed to get push token');
+    }
+  } catch (error) {
+    console.error('[PUSH DIAGNOSTICS] ❌ Error getting push token:', error);
+  }
+
+  // Check notification channels (Android)
+  if (Platform.OS === 'android') {
+    try {
+      const channels = await Notifications.getNotificationChannelsAsync();
+      console.log(`[PUSH DIAGNOSTICS] Android notification channels: ${channels.length}`);
+      channels.forEach((channel) => {
+        console.log(`[PUSH DIAGNOSTICS]   - ${channel.id}: ${channel.name} (importance: ${channel.importance})`);
+      });
+    } catch (error) {
+      console.error('[PUSH DIAGNOSTICS] Error checking notification channels:', error);
+    }
+  }
+
+  console.log('[PUSH DIAGNOSTICS] ========================================\n');
 }
 

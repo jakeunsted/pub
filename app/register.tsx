@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Modal, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Modal, Platform, Pressable, StyleSheet } from 'react-native';
 
-import { View } from '@/components/Themed';
+import { Text as ThemedText, View } from '@/components/Themed';
 import { Button, ButtonText } from '@/components/ui/button';
 import {
   FormControl,
@@ -189,8 +189,8 @@ export default function RegisterScreen() {
         <Pressable style={styles.modalOverlay} onPress={handleEmailConfirmationModalClose}>
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalContent} lightColor="#fff" darkColor="#121212">
-              <Text style={styles.modalTitle}>{t('register.checkEmail')}</Text>
-              <Text style={styles.modalMessage}>{t('register.verifyEmailMessage')}</Text>
+              <ThemedText style={styles.modalTitle} lightColor="#000" darkColor="#fff">{t('register.checkEmail')}</ThemedText>
+              <ThemedText style={styles.modalMessage} lightColor="#000" darkColor="#fff">{t('register.verifyEmailMessage')}</ThemedText>
               <Button
                 style={styles.modalButton}
                 onPress={handleEmailConfirmationModalClose}
@@ -203,7 +203,7 @@ export default function RegisterScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-      <Text style={styles.title}>{t('register.title')}</Text>
+      <ThemedText style={styles.title}>{t('register.title')}</ThemedText>
 
       <FormControl style={styles.formControl}>
         <FormControlLabel>

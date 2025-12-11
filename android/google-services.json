@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "801654137636",
+    "project_id": "jakeunsted-pub",
+    "storage_bucket": "jakeunsted-pub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801654137636:android:3a3eec94cade39429f49b1",
+        "android_client_info": {
+          "package_name": "com.jakeunsted.pub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVmhtkZc0Ba1Jt9_UZB1RvPXOKmYTGV4k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

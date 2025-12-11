@@ -38,7 +38,8 @@ yarn-error.*
 
 # generated native folders
 /ios
-/android
+/android/*
+!/android/google-services.json
 
 # Supabase
 /supabase/.temp/

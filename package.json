@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start-local": "expo start",
-    "start": "npx serve dist -p $PORT",
+    "start": "npx serve dist -s -p $PORT",
     "types": "supabase gen types typescript --linked > types/database.types.ts",
     "android": "expo run:android",
     "ios": "expo run:ios",

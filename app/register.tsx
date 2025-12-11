@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, StyleSheet, Text } from 'react-native';
 
+import { View } from '@/components/Themed';
 import { Button, ButtonText } from '@/components/ui/button';
 import {
   FormControl,
@@ -21,6 +22,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
 
   const handleRegister = async () => {
     if (!email || !displayName || !password || !confirmPassword) {
@@ -96,17 +98,21 @@ export default function RegisterScreen() {
         // The trigger might have created a profile without display_name, which is acceptable
       }
 
-      // Show email verification message and redirect to login
-      Alert.alert(
-        t('register.checkEmail'),
-        t('register.verifyEmailMessage'),
-        [
-          {
-            text: t('common.ok'),
-            onPress: () => router.replace('/login'),
-          },
-        ]
-      );
+      // Show email verification message
+      if (Platform.OS === 'web') {
+        setShowEmailConfirmationModal(true);
+      } else {
+        Alert.alert(
+          t('register.checkEmail'),
+          t('register.verifyEmailMessage'),
+          [
+            {
+              text: t('common.ok'),
+              onPress: () => router.replace('/login'),
+            },
+          ]
+        );
+      }
       setLoading(false);
       return;
     }
@@ -167,8 +173,36 @@ export default function RegisterScreen() {
     router.push('/login');
   };
 
+  const handleEmailConfirmationModalClose = () => {
+    setShowEmailConfirmationModal(false);
+    router.replace('/login');
+  };
+
   return (
     <View style={styles.container}>
+      <Modal
+        visible={showEmailConfirmationModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleEmailConfirmationModalClose}
+      >
+        <Pressable style={styles.modalOverlay} onPress={handleEmailConfirmationModalClose}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalContent} lightColor="#fff" darkColor="#121212">
+              <Text style={styles.modalTitle}>{t('register.checkEmail')}</Text>
+              <Text style={styles.modalMessage}>{t('register.verifyEmailMessage')}</Text>
+              <Button
+                style={styles.modalButton}
+                onPress={handleEmailConfirmationModalClose}
+                size="lg"
+                action="primary"
+              >
+                <ButtonText>{t('common.ok')}</ButtonText>
+              </Button>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
       <Text style={styles.title}>{t('register.title')}</Text>
 
       <FormControl style={styles.formControl}>
@@ -278,5 +312,33 @@ const styles = StyleSheet.create({
   },
   linkButton: {
     marginTop: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    borderRadius: 12,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalButton: {
+    width: '100%',
   },
 });

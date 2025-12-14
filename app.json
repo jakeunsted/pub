@@ -33,7 +33,8 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "vapidPublicKey": "BLUJLIbVjPb4ON8PnxAEsbyTK7zfcGctKnLzyNDcCa4ObVlZ5yESCUAuvWFuVXeh2KSVqPMkVAWeKS60403a8vw"
     },
     "plugins": [
       "expo-router"

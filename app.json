@@ -34,6 +34,13 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png",
+      "config": {
+        "push": {
+          "vapidPublicKey": "BLUJLIbVjPb4ON8PnxAEsbyTK7zfcGctKnLzyNDcCa4ObVlZ5yESCUAuvWFuVXeh2KSVqPMkVAWeKS60403a8vw"
+        }
+      }
+    },
+    "notification": {
       "vapidPublicKey": "BLUJLIbVjPb4ON8PnxAEsbyTK7zfcGctKnLzyNDcCa4ObVlZ5yESCUAuvWFuVXeh2KSVqPMkVAWeKS60403a8vw"
     },
     "plugins": [

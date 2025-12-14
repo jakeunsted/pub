@@ -99,6 +99,12 @@ export async function getExpoPushToken(): Promise<string | null> {
     return null;
   }
 
+  // Skip push notifications on web platform (web push has different requirements)
+  if (Platform.OS === 'web') {
+    console.log('[PUSH] Push notifications skipped on web platform');
+    return null;
+  }
+
   try {
     const projectId = process.env.EXPO_PUBLIC_PROJECT_ID;
     console.log(`[PUSH] Getting push token with project ID: ${projectId || 'NOT SET'}`);

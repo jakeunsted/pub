@@ -16,7 +16,6 @@ import { ThemeProvider as AppThemeProvider, useThemePreference } from '@/lib/the
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
 import '@/lib/i18n';
-import * as Notifications from 'expo-notifications';
 
 export {
   // Catch any errors thrown by the Layout component.

@@ -41,7 +41,8 @@
       }
     },
     "notification": {
-      "vapidPublicKey": "BLUJLIbVjPb4ON8PnxAEsbyTK7zfcGctKnLzyNDcCa4ObVlZ5yESCUAuvWFuVXeh2KSVqPMkVAWeKS60403a8vw"
+      "vapidPublicKey": "BLUJLIbVjPb4ON8PnxAEsbyTK7zfcGctKnLzyNDcCa4ObVlZ5yESCUAuvWFuVXeh2KSVqPMkVAWeKS60403a8vw",
+      "serviceWorkerPath": "/service-worker.js"
     },
     "plugins": [
       "expo-router"
